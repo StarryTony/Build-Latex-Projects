@@ -35,7 +35,7 @@ A lightweight shell script supports compiling latex source files to a pdf docume
 
 ## Screenshot
 
-
+![diff](screenshots/diff.GIF)
 
 ## Installation
 
