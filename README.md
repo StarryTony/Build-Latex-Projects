@@ -36,6 +36,7 @@ A lightweight shell script supports compiling latex source files to a pdf docume
 
 ## Screenshot
 
+This is for demonstration only. In practice, only text editor and pdf preview window are needed (therefore, you can put them side by side).
 
 live preview pdf           |  diff with other version
 :-------------------------:|:-------------------------:
