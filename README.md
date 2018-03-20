@@ -32,7 +32,7 @@ A lightweight shell script supports compiling latex source files to a pdf docume
     - Foldable menu;
     - Customisable theme;
     - Quickly install missing packages using the `tlmgr` tool provided by the MacTex;
-    - Can easily expand new functions / configurations.
+    - Can easily expand with new functions / configurations.
 
 ## Screenshot
 
