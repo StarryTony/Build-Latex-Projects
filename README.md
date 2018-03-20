@@ -20,6 +20,7 @@ A lightweight shell script supports compiling latex source files to a pdf docume
     - Remember historical operations;
     - Maintain version history;
     - Easily load a latex project;
+    - Auto search version history & the entry .tex
     - Rename a latex project;
     - Choose latex engine & bibliography backend;
     - Choose encoding for *.tex
