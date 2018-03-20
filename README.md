@@ -34,7 +34,7 @@ A lightweight shell script supports compiling latex source files to a pdf docume
     - Can easily expand new functions / configurations.
 
 ## Screenshot
-![live preview pdf](screenshots/preview.GIF) ![diff with other version](screenshots/diff.GIF)
+![live preview pdf](screenshots/preview.GIF "live preview") ![diff with other version](screenshots/diff.GIF "diff versions")
 
 ## Installation
 
