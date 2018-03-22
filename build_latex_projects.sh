@@ -1529,7 +1529,7 @@ init(){
 
     # name for files in project folder, e.g. "*.profile"
     sh_name_extra=$(trim_sh_name "${sh_name}" "_")
-echo "[${sh_name_extra}]"
+
 	# shell path
 	shell_path=$(dirname "${0}")"/"
 	profile_folder=${shell_path}"profile/"
