@@ -44,7 +44,9 @@ live preview pdf           |  diff with other version
 
 ## Installation
 
-Just put the script in a folder, the script will auto-create a profile folder at the current directory and another configuration folder in a specified project directory.
+- Install [MacTex](http://www.tug.org/mactex/ "MacTex")
+
+- Just put the script in a folder, the script will auto-create a profile folder at the current directory and another configuration folder in a specified project directory.
 
 ## Post Install
 
