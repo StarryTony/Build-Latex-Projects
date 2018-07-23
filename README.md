@@ -1,5 +1,5 @@
 # Build-Latex-Projects
-This lightweight script helps to build complicated latex projects.
+This lightweight script helps build any complicated latex projects.
 
 [![MIT licensed](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE.md)
 
