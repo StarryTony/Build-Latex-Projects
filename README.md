@@ -1,5 +1,5 @@
 # Build-Latex-Projects
-This lightweight script helps build any complicated latex projects.
+This lightweight script helps build any complicated latex projects. I have ever written a powershell version, but it seems that linux sub-system with this is a better option.
 
 [![MIT licensed](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE.md)
 
