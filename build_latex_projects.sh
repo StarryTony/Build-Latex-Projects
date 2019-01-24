@@ -3,7 +3,7 @@
 # @Author: StarryTony
 # @Date:   2018-03-20 23:21:13
 # @Last Modified by:   StarryTony
-# @Last Modified time: 2018-03-20 23:46:35
+# @Last Modified time: 2019-01-24 15:47:53
 # @Description: This lightweight script helps to build complicated latex projects.
 
 #   -------------------------------
@@ -27,7 +27,7 @@ default(){
         fi
 
         count=$((${count}+1))
-    done 
+    done
 
     show_debug_msg "${ICON_ACCEPT} : Default Configuration Loaded." ${ACCEPT_LEVEL}
 }
@@ -79,7 +79,7 @@ update_project_specified_config(){
 
         eval ${item}
         count=$((${count}+1))
-    done 
+    done
 
     show_debug_msg "${ICON_ACCEPT} : Project specified configuration updated." ${ACCEPT_LEVEL}
 }
@@ -87,13 +87,17 @@ update_project_specified_config(){
 load_project(){
 	echoFuncSeperator "load_project"
 
+	# clean before re-loading
+	# target_output_name=""
+	# target_output_name="${project_name}"
+
     if [ -f "${profile_path}" ]
     then
-        read_profile      
-    else    
+        read_profile
+    else
         default
     fi
-    
+
     # if profile folder not exist, create it
     if [ ! -d "${profile_folder}" ]
     then
@@ -117,9 +121,9 @@ load_project(){
 		# override with project specified configuration
 	    if [ -f "${project_specified_config}" ]
 	    then
-	        read_project_specified_config   
+	        read_project_specified_config
 	    else
-	    	echo -e "${ICON_WARN} No project specified configuration found."   
+	    	echo -e "${ICON_WARN} No project specified configuration found."
 	    fi
 
 	    # auto find the most recent version number
@@ -130,7 +134,7 @@ load_project(){
 
 		updateConfig
 
-		show_debug_msg "${ICON_ACCEPT} : Project loaded." ${ACCEPT_LEVEL}	
+		show_debug_msg "${ICON_ACCEPT} : Project loaded." ${ACCEPT_LEVEL}
     fi
 }
 
@@ -148,12 +152,12 @@ autoFindVersionNum(){
         lb_str=${lb_str}" -not -iname \"${KEY}\""
 
         count=$((${count}+1))
-    done  
+    done
     lb_str=${lb_str}" -print0 | xargs -0 stat -f '%Sm %N,' | sort"
 	local bak_list=`eval "${lb_str}"`
 
 	# sort list
-	IFS=$',' 
+	IFS=$','
 	bak_list=($(sort <<<"${bak_list[*]}"))
 	unset IFS
 
@@ -165,7 +169,7 @@ autoFindVersionNum(){
         KEY_timestamp=`date -r "${KEY}" '+%s'`
 
         KEY=${KEY##*\/}
-		
+
         item_str=""
         if [[ ${index} == 0 ]]; then
         	item_str="Available history versions: "
@@ -173,14 +177,14 @@ autoFindVersionNum(){
         	item_str="                            "
         fi
 
-        item_str=${item_str}"[${KEY##*_}] ${profile_color}${KEY}${NC} " 
+        item_str=${item_str}"[${KEY##*_}] ${profile_color}${KEY}${NC} "
 		item_str=${item_str}"${highlight_time}${KEY_time}${NC}"
 
-		candidate_diff=${KEY##*_} 
+		candidate_diff=${KEY##*_}
 
 		show_debug_msg "${item_str}" ${NORMAL_LEVEL}
-    done  
-  
+    done
+
     echo -e "Recent changed version: ${profile_color}${candidate_diff}${NC}"
 
 	eval "$1=\"${candidate_diff}\""
@@ -197,7 +201,7 @@ tryAutoFindMainTex(){
 
 		OLD_IFS="$IFS" # OLD_IFS用于备份默认的分隔符，使用完后将之恢复默认
 		IFS=$'\n'  # A list of characters that separate fields; used when the shell splits words as part of expansion.
-		arr=($temp_name) 
+		arr=($temp_name)
 
 		temp_project_name=""
 		# loop in case of not only one tex file
@@ -206,7 +210,7 @@ tryAutoFindMainTex(){
 		for item in ${arr[@]}
 		do
 			item=${item#./}
-			item=${item%.tex}	
+			item=${item%.tex}
 
 			arrayTex+=("${count}::${item}")
 			echo -e "[${count}] ${profile_color}${item}${NC}"
@@ -216,9 +220,9 @@ tryAutoFindMainTex(){
 			fi
 			count=$((${count}+1))
 		done
-		IFS="$OLD_IFS" 
+		IFS="$OLD_IFS"
 		# unset IFS # 或者使用unset恢复默认值
-		
+
 		# re-choose the main .tex file manually if there are more than 1 .tex files
 		if [[ ${count} > 1 ]]; then
 			echo "There are ${count} .tex files, please specify the main .tex file (you can use index number or the .tex file name, the first .tex file will be chosen if nothing input):"
@@ -248,32 +252,35 @@ tryAutoFindMainTex(){
 				VALUE="${index##*::}"
 
 				if [[ "${temp_project_name}" == "${VALUE}" ]]; then
-					project_name="$temp_project_name"
+					project_name="${temp_project_name}"
+					target_output_name="${project_name}"
+
 					isTexExist=true
 
 					show_debug_msg "${ICON_ACCEPT} : New main tex ${profile_color}${project_name}.tex${NC} has been chosen." ${ACCEPT_LEVEL}
 				fi
-			done	
+			done
 
 			if [[ ${isTexExist} == false ]]; then
 				show_debug_msg "${ICON_ERR} : the ${err_msg_color}${temp_project_name}.tex${NC} file does not exist." ${ERR_LEVEL}
 				# tryAutoFindMainTex
 				return ${ERR_CODE}
-			fi		
+			fi
 		else
-			tryAutoFindMainTex	
+			tryAutoFindMainTex
 		fi
 
-		# write new configuration to profile file
-		updateConfig
+		# write new configuration to profile file (system config only)
+		updateConfig "false"
 		show_debug_msg "${ICON_ACCEPT} : New main tex ${profile_color}${project_name}.tex${NC} has been loaded." ${ACCEPT_LEVEL}
 	else
 		show_debug_msg "${ICON_ERR} : the project_path \"${profile_color}${profile_path}${NC}\" is invalid." ${ERR_LEVEL}
 	fi
 
-	
+
 }
 
+# $1 -> update project specified config?
 updateConfig(){
 	echoFuncSeperator "updateConfig"
 
@@ -289,11 +296,13 @@ updateConfig(){
 
         eval ${item}
         count=$((${count}+1))
-    done 
-
-    update_project_specified_config
+    done
 
     show_debug_msg "${ICON_ACCEPT} : System config updated." ${ACCEPT_LEVEL}
+
+    if [[ "$1" != "false" ]]; then
+    	update_project_specified_config
+    fi
 }
 
 # $1 -> msg; $2 -> msg_debug_level
@@ -303,7 +312,7 @@ show_debug_msg(){
 	else
 		msg_debug_level=${DEBUG_LEVEL_MIN}
 	fi
-	
+
 	if [[ ${DEBUG_LEVEL} -ge ${msg_debug_level} ]]; then
 		now_time=`date '+%Y-%m-%d %H:%M:%S'`
 		echo -e "${grey_time}${now_time}${NC} $1"
@@ -335,13 +344,20 @@ choose_project(){
 	echoFuncSeperator "choose_project"
 
 	prev_project_path=${project_path}
-	echo "Please input the project path to compile:"
-	read project_path
 
-	if [[ "${project_path}" != "" ]]; then
+	if [[ "$1" == "" ]]; then
+		echo "Please input the project path to compile:"
+		read project_path
+	else
+		project_path="$1"
+	fi
+
+	if [[ "${project_path}" != "" ]] && [[ -d "${project_path}" ]]; then
 		tryAutoFindMainTex
-
 		show_debug_msg "${ICON_ACCEPT} : New project \"${profile_color}${project_path}${NC}\" has been choosen." ${ACCEPT_LEVEL}
+
+		# update recent projects list
+		update_recent_projects_list "${project_path}"
 
 		# load new project
 		load_project
@@ -353,11 +369,96 @@ choose_project(){
 	fi
 }
 
+update_recent_projects_list(){
+	echoFuncSeperator "update_recent_projects_list"
+	local add_item="$1"
+
+	# if [[ ! -f "${recent_open_projects_list}" ]]; then
+	# 	return ${ERR_CODE}
+	# fi
+
+	cp "${recent_open_projects_list}" "${recent_open_projects_list}_copy"
+	IFS=$'\n' read -d '' -r -a recent_projects_list < "${recent_open_projects_list}_copy"
+	unset IFS
+
+	if ! containsElement "${add_item}" "${recent_projects_list[@]}"; then
+		# add
+		local recentCount=0
+		local maxCount=$((${max_recent_projects_count}))
+		echo -e "Max recent projects count: ${maxCount}"
+		for item in "${recent_projects_list[@]}"; do
+			if [[ "${recentCount}" == "1" ]]; then
+				echo -e "[$(($recentCount-1))] [${grey_time}${item}${NC}]"
+				echo "${item}" > "${recent_open_projects_list}"
+			elif [[ "${recentCount}" -ne "0" ]]; then
+				echo -e "[$(($recentCount-1))] [${grey_time}${item}${NC}]"
+				echo "${item}" >> "${recent_open_projects_list}"
+			fi
+
+			if [[ ${recentCount} -gt ${maxCount} ]]; then
+				break
+			else
+				recentCount=$(($recentCount+1))
+			fi
+		done
+
+		echo -e "Add: [$(($recentCount-1))] [${status_seperator_color}${add_item}${NC}]"
+		echo "${add_item}" >> "${recent_open_projects_list}"
+	fi
+
+	rm -f "${recent_open_projects_list}_copy"
+}
+
+choose_recent_projects(){
+	echoFuncSeperator "choose_recent_projects"
+
+	if [[ ! -f "${recent_open_projects_list}" ]]; then
+		show_debug_msg "${ICON_ERR} : No recent opened projects list found." ${ERR_LEVEL}
+		return ${ERR_CODE}
+	fi
+
+	# read from profile
+	IFS=$'\n' read -d '' -r -a recent_projects_list < "${recent_open_projects_list}"
+	unset IFS
+
+	local itemCount=0
+	for index in "${recent_projects_list[@]}"; do
+		#statements
+		echo -e "[${itemCount}] [${menu_color}${index}${NC}]"
+		itemCount=$((${itemCount}+1))
+	done
+
+
+    echo -e "Please choose a recent opened project (no changes if nothing chosen): "
+	read -n1 recent_project_index
+	echo ;
+
+	if [[ "${recent_project_index}" =~ ^[0-9]+$ ]] && [[ $((${recent_project_index})) -ge 0 ]] && [[ $((${recent_project_index})) -le $((${itemCount}-1)) ]]; then
+		count=0
+	    for index in "${recent_projects_list[@]}"; do
+	    	KEY="${index}"
+
+	        if [[ "${recent_project_index}" == "${count}" ]] || [[ "${recent_project_index}" == "${KEY}" ]]; then
+	        	echo -e "[${count}] ${menu_color}${KEY}${NC} has been chosen."
+				choose_project "${KEY}"
+
+	        	return ${ACCEPT_CODE}
+	        fi
+
+	        count=$((${count}+1))
+	    done
+	else
+		# do nothing
+		echo -e "${ICON_WARN} Nothing changed."
+		return ${WARN_CODE}
+	fi
+}
+
 clean_cache(){
 	echoFuncSeperator "clean_cache"
 	echo "Clean cache..."
 
-	# clean dump files for recompile (bbl,aux,bib)	
+	# clean dump files for recompile (bbl,aux,bib)
 	cache_list=(
 		'*.bbl'
 		'*.aux'
@@ -395,12 +496,12 @@ clean_cache(){
         find "${project_path}" -type f -iname "${KEY}" -print0 | xargs -0 rm
 
         count=$((${count}+1))
-    done  
+    done
 
 	# only clean project.pdf
 	# find "${project_path}" -type f -maxdepth 1 -iname "*.pdf" -print0 | xargs -0 rm
 	# find "${project_path}" -type f -maxdepth 1 -iname "${project_name}.pdf" -print0 | xargs -0 rm
-	
+
 	show_debug_msg "${ICON_ACCEPT} : Clean cache... done." ${ACCEPT_LEVEL}
 }
 
@@ -427,7 +528,7 @@ delete_all_backup(){
 	then
 	    echo -e "Delete all backups, ${menu_color}yes${NC} or ${menu_color}no${NC} (${menu_color}y${NC}/${menu_color}n${NC})?"
 		read option
-		echo ;	
+		echo ;
 		if [[ "${option}" == "y" ]] || [[ "${option}" == "yes" ]]; then
 			rm -r "$backup_folder"
 		else
@@ -455,11 +556,11 @@ choose_pdf_compiler(){
 
         echo -e "[${count}] ${menu_color}${KEY}${NC} -> ${DES}"
         count=$((${count}+1))
-    done   
+    done
 
     echo -e "Please choose pdf compiler (you can use the index number or compiler name, default is \"pdflatex\" if nothing chosen): "
 	read -n1 pdf_config
-	echo ;	
+	echo ;
 
 	if [[ "${pdf_config}" =~ ^[0-9]+$ ]] && [[ $((${pdf_config})) -ge 0 ]] && [[ $((${pdf_config})) -le $((${count}-1)) ]]; then
 		count=0
@@ -475,7 +576,7 @@ choose_pdf_compiler(){
 	        fi
 
 	        count=$((${count}+1))
-	    done 
+	    done
 	elif [[ "${default_pdf_compiler}" != "" ]]; then
 		default_pdf_compiler="pdflatex"
 		echo -e "[0] ${menu_color}${default_pdf_compiler}${NC} has been chosen."
@@ -502,11 +603,11 @@ choose_ref_compiler(){
 
         echo -e "[${count}] ${menu_color}${KEY}${NC} -> ${DES}"
         count=$((${count}+1))
-    done   
+    done
 
     echo -e "Please choose references compiler (you can use the index number or compiler name, default is \"Biber\" if nothing chosen): "
 	read -n1 ref_config
-	echo ;	
+	echo ;
 
 	if [[ "${ref_config}" =~ ^[0-9]+$ ]] && [[ $((${ref_config})) -ge 0 ]] && [[ $((${ref_config})) -le $((${count}-1)) ]]; then
 		count=0
@@ -522,7 +623,7 @@ choose_ref_compiler(){
 	        fi
 
 	        count=$((${count}+1))
-	    done 
+	    done
 	elif [[ "${default_ref_compiler}" != "" ]]; then
 		default_ref_compiler="Biber"
 		echo -e "[0] ${menu_color}${default_ref_compiler}${NC} has been chosen."
@@ -551,11 +652,11 @@ choose_tex_encoding(){
 
         echo -e "[${count}] ${menu_color}${KEY}${NC} -> ${DES}"
         count=$((${count}+1))
-    done   
+    done
 
     echo -e "Please choose encoding used by *.tex: "
 	read -n1 encoding_config
-	echo ;	
+	echo ;
 
 	if [[ "${encoding_config}" =~ ^[0-9]+$ ]] && [[ $((${encoding_config})) -ge 0 ]] && [[ $((${encoding_config})) -le $((${count}-1)) ]]; then
 		count=0
@@ -571,7 +672,7 @@ choose_tex_encoding(){
 	        fi
 
 	        count=$((${count}+1))
-	    done 
+	    done
 	elif [[ "${default_tex_encoding}" != "" ]]; then
 		default_tex_encoding="utf8"
 		echo -e "[0] ${menu_color}${default_tex_encoding}${NC} has been chosen."
@@ -616,7 +717,7 @@ compile(){
 	elif [[ "${default_ref_compiler}" == "BibTex" ]]; then
 		bibtex "${target_tex}"
 	fi
-	
+
 	eval ${compiler_str}
 	eval ${compiler_str}
 
@@ -627,8 +728,12 @@ compile(){
 	# target_tex.pdf is generated in the ./ dir, so remove any path prefix
 	target_tex="${target_tex##*/}"
 
-	mv "${target_tex}.pdf" "output/""${target_tex}.pdf"		
-	open_file "output/""${target_tex}.pdf"		
+	if [[ "${target_output_name}" == "" ]]; then
+		target_output_name="${target_tex}"
+	fi
+
+	mv "${target_tex}.pdf" "output/""${target_output_name}.pdf"
+	open_file "output/""${target_output_name}.pdf"
 
 	# version count: count+1 once completed
 	if [[ "$1" == "" ]]; then
@@ -669,7 +774,7 @@ live_preview(){
 		clean_cache
 	fi
 
-	lp_str="latexmk -pvc -pdf -pdflatex=${default_pdf_compiler} \"${target_tex}.tex\""
+	lp_str="latexmk -jobname=\"${target_output_name}\" -pvc -pdf -pdflatex=${default_pdf_compiler} \"${target_tex}.tex\""
 	eval ${lp_str}
 
 	# move result to output
@@ -678,7 +783,11 @@ live_preview(){
 	# target_tex.pdf is generated in the ./ dir, so remove any path prefix
 	target_tex="${target_tex##*/}"
 
-	mv "${target_tex}.pdf" "output/""${target_tex}.pdf"	
+	if [[ "${target_output_name}" == "" ]]; then
+		target_output_name="${target_tex}"
+	fi
+
+	mv "${target_tex}.pdf" "output/""${target_output_name}.pdf"
 
 	# version count: count+1 once completed (only count the final version during live_preview)
 	if [[ "$1" == "" ]]; then
@@ -694,6 +803,14 @@ live_preview(){
 
 show_biber_debugInfo(){
 	biber -D "${project_name}"
+}
+
+debug(){
+	if [[ "${DEBUG_LEVEL}" == "" ]]; then
+		DEBUG_LEVEL=${DEBUG_LEVEL_MAX}
+	else
+		DEBUG_LEVEL=""
+	fi
 }
 
 backup_project(){
@@ -720,7 +837,7 @@ backup_project(){
         rsync_str=${rsync_str}" --exclude=\"${KEY}\""
 
         count=$((${count}+1))
-    done  
+    done
 
     rsync_str=${rsync_str}" . \"${backup_folder}/bak_${tex_version_count}\""
     eval ${rsync_str}
@@ -746,14 +863,14 @@ tar_project_for_commit(){
         tar_str=${tar_str}" --exclude=\"${KEY}\""
 
         count=$((${count}+1))
-    done  
+    done
 
     if [ ! -d "${backup_folder}" ]
     then
     	mkdir "${backup_folder}"
 	fi
 
-    tar_str=${tar_str}" -zcvf \"output/${project_name}.tgz\" ."
+    tar_str=${tar_str}" -zcvf \"output/${target_output_name}.tgz\" ."
     eval ${tar_str}
 
     show_debug_msg "${ICON_ACCEPT} : the tar file has been created for commit." ${ACCEPT_LEVEL}
@@ -775,12 +892,12 @@ list_backup(){
         current_list_str=${current_list_str}" -name \"${KEY}\" -prune"
 
         count=$((${count}+1))
-    done  
+    done
     current_list_str=${current_list_str}" -o -type f -iname '*.tex' -print0 | xargs -0 stat -f '%Sm %N,'"
     local current_list=`eval "${current_list_str}"`
 
 	# sort list
-	IFS=$',' 
+	IFS=$','
 	current_list=($(sort <<<"${current_list[*]}"))
 	unset IFS
 
@@ -802,7 +919,7 @@ list_backup(){
         else
         	echo -e "${grey_time}[${index}] ${KEY_time} ${KEY}${NC}"
         fi
-    done  
+    done
 
     # list all backups
 	lb_except_list=(
@@ -817,12 +934,12 @@ list_backup(){
         lb_str=${lb_str}" -not -iname \"${KEY}\""
 
         count=$((${count}+1))
-    done  
+    done
     lb_str=${lb_str}" -print0 | xargs -0 stat -f '%Sm %N,' | sort"
 	local bak_list=`eval "${lb_str}"`
 
 	# sort list
-	IFS=$',' 
+	IFS=$','
 	bak_list=($(sort <<<"${bak_list[*]}"))
 	unset IFS
 
@@ -834,7 +951,7 @@ list_backup(){
         KEY_timestamp=`date -r "${KEY}" '+%s'`
 
         KEY=${KEY##*\/}
-		
+
         item_str=""
         if [[ ${index} == 0 ]]; then
         	item_str="Available history versions: "
@@ -842,7 +959,7 @@ list_backup(){
         	item_str="                            "
         fi
 
-        item_str=${item_str}"[${KEY##*_}] ${profile_color}${KEY}${NC} " 
+        item_str=${item_str}"[${KEY##*_}] ${profile_color}${KEY}${NC} "
 
 	    if [[ ${KEY_timestamp} -ge ${current_ver_timestamp} ]]; then
 			# bak has no changes vs. the current version
@@ -850,12 +967,12 @@ list_backup(){
 		else
 			item_str=${item_str}"${highlight_time}${KEY_time}${NC}"
 
-			candidate_diff=${KEY##*_} 
-		fi 
+			candidate_diff=${KEY##*_}
+		fi
 
 		echo -e "${item_str}"
-    done  
-  
+    done
+
     echo -e "Current version modified time: ${notify_color}${current_ver_time}${NC}"
     echo -e "Recent changed version: ${profile_color}${candidate_diff}${NC}"
 
@@ -868,7 +985,7 @@ diff_file(){
 
 	if [[ "${tex_version_count}" == "" ]]; then
 		show_debug_msg "${ICON_ERR} : No historical version."	${ERR_LEVEL}
-		return ${ERR_CODE}		
+		return ${ERR_CODE}
 	else
 		candidate_diff=''
 		list_backup candidate_diff
@@ -905,7 +1022,7 @@ diff_file(){
 				eval "${compile_str}"
 			else
 				compile "${diff_tex}"
-			fi			
+			fi
 
 			echo -e "recent diff_version: ${profile_color}${diff_version}${NC}"
 		else
@@ -930,7 +1047,7 @@ open_file(){
 	echoFuncSeperator "open_file"
 
 	if [[ "$1" == "" ]]; then
-		target_file="output/""${project_name}.pdf"
+		target_file="output/""${target_output_name}.pdf"
 	else
 		target_file="$1"
 	fi
@@ -965,7 +1082,7 @@ rename(){
 
 	# find a file then rename (only need to rename the main *.tex file)
 	if [ -f "${project_name}.tex" ]
-	then 
+	then
 		previous_name="${project_name}"
 		echo "Please input the new project name to rename (name of .tex file without .tex):"
 		read new_name
@@ -975,9 +1092,10 @@ rename(){
 				mv "${project_name}.tex" "${new_name}.tex"
 
 				# try to rename previous result (rename the generated .pdf file in previous running)
-				if [ -f "output/""${project_name}.pdf" ]
+				if [ -f "output/""${target_output_name}.pdf" ]
 				then
-					mv "output/""${project_name}.pdf" "output/""${new_name}.pdf"
+					mv "output/""${target_output_name}.pdf" "output/""${new_name}.pdf"
+					target_output_name="${new_name}"
 				fi
 
 				# write new configuration to profile file
@@ -986,7 +1104,7 @@ rename(){
 				echo "project_name=\"${project_name}\"" >> "${profile_path}"
 
 				# clean files generated by previous project
-				find "${project_path}" -type f -maxdepth 1 -iname "${previous_name}.*" -print0 | xargs -0 rm						
+				find "${project_path}" -type f -maxdepth 1 -iname "${previous_name}.*" -print0 | xargs -0 rm
 			fi
 
 			if [[ "${project_path}" != "${dir_namePathOnly}/${new_name}" ]]; then
@@ -996,9 +1114,9 @@ rename(){
 
 
 				mv "${project_path}" "${dir_namePathOnly}/${new_name}"
-				project_path="${dir_namePathOnly}/${new_name}"	
+				project_path="${dir_namePathOnly}/${new_name}"
 
-				show_debug_msg "${ICON_ACCEPT} : the project has been renamed as \"${profile_color}${new_name}${NC}\"." ${ACCEPT_LEVEL}	
+				show_debug_msg "${ICON_ACCEPT} : the project has been renamed as \"${profile_color}${new_name}${NC}\"." ${ACCEPT_LEVEL}
 			fi
 
 			updateConfig
@@ -1010,10 +1128,12 @@ rename(){
 }
 
 countPDFWords(){
-	if [ -f "output/""${project_name}.pdf" ]
+	local target_pdf="$1"
+
+	if [ -f "output/""${target_pdf}.pdf" ]
 	then
-		text="$(pdftotext "output/""${project_name}.pdf" - )"
-		
+		text="$(pdftotext "output/""${target_pdf}.pdf" - )"
+
 		if [[ ${countExcludeRef} == true ]]; then
 			text=${text%REFERENCES*}
 		fi
@@ -1022,33 +1142,79 @@ countPDFWords(){
 			echo $text
 			echo -e "\033[34m**********[countPDFWords]**********${NC}\n"
 		fi
-		
+
 		wordsCount=$(echo ${text} | wc -w)
 		wordsCount=${wordsCount//[[:space:]]/}
-		echo -e "Last output: \033[31m${project_name}.pdf${NC} has \033[34m${wordsCount}${NC} words."
+		echo -e "Last output: \033[31m${target_pdf}.pdf${NC} has \033[34m${wordsCount}${NC} words."
 	fi
 }
 
 countingWordsConfig(){
 	echo -e "Exclude references for words count? (\033[1;32my/n${NC})"
 	read -n1 config
-	echo ;	
+	echo ;
 	if [[ "${config}" == "y" ]] || [[ "${config}" == "Y" ]]; then
 		countExcludeRef=true
 	elif [[ "${config}" == "n" ]] || [[ "${config}" == "N" ]]; then
 		countExcludeRef=false
-	fi	
+	fi
 
 	echo -e "Show text for words count? (\033[1;32my/n${NC})"
 	read -n1 config
-	echo ;	
+	echo ;
 	if [[ "${config}" == "y" ]] || [[ "${config}" == "Y" ]]; then
 		showTextForWordsCount=true
 	elif [[ "${config}" == "n" ]] || [[ "${config}" == "N" ]]; then
 		showTextForWordsCount=false
-	fi	
+	fi
 
-	show_debug_msg "${ICON_ACCEPT} : new config for countingWords added." ${ACCEPT_LEVEL}		
+	show_debug_msg "${ICON_ACCEPT} : new config for countingWords added." ${ACCEPT_LEVEL}
+}
+
+containsElement () {
+  local e match="$1"
+  shift
+  for e; do [[ "$e" == "$match" ]] && return 0; done
+  return 1
+}
+
+re_install_package(){
+	echoFuncSeperator "re_install_package"
+
+	if [[ ! -f "${latex_package_profile_path}" ]]; then
+		return ${ERR_CODE}
+	fi
+
+	# read from profile
+	IFS=$'\n' read -d '' -r -a latex_packs_list < "${latex_package_profile_path}"
+	unset IFS
+
+	# usually need to update tlmgr for reinstall
+	sudo tlmgr update --self
+
+	echo ;
+	constructSeperator "" "-" "${title_window_color}"
+	local failCount=0
+	for index in "${latex_packs_list[@]}"; do
+
+		sudo tlmgr install "${index}"
+		local install_result_code=$?
+		if [[ "${install_result_code}" != "0" ]]; then
+			echo -e "Fail: [${highlight_time}${index}${NC}]"
+			failCount=$(($failCount+1))
+		else
+			echo -e "Success: [${index}]"
+		fi
+		constructSeperator "" "-" "${title_window_color}"
+    done
+
+    if [[ "${failCount}" == "0" ]]; then
+    	echo -e "${highlight_time}${#latex_packs_list[@]}${NC} packages have been installed."
+    	return ${ACCEPT_CODE}
+    else
+	    echo -e "${err_msg_color}${failCount}${NC}/${highlight_time}${#latex_packs_list[@]}${NC} packages failed to install."
+    	return ${ERR_CODE}
+    fi
 }
 
 install_package(){
@@ -1063,16 +1229,24 @@ install_package(){
 
 		sudo tlmgr install "${package_name}"
 
-		echo -e "Install result code: $?"
+		local install_result_code=$?
+		echo -e "Install result code: ${install_result_code}"
 
-		if [[ "$?" == "0" ]]; then
+		if [[ "${install_result_code}" == "0" ]]; then
 			# success
-			echo "${package_name}" >> "${latex_package_profile_path}"
+			# read from profile
+			IFS=$'\n' read -d '' -r -a latex_packs_list < "${latex_package_profile_path}"
+			unset IFS
+
+			if ! containsElement "${package_name}" "${latex_packs_list[@]}"; then
+				echo "${package_name}" >> "${latex_package_profile_path}"
+			fi
+
 			show_debug_msg "${ICON_ACCEPT} : \"${profile_color}${package_name}${NC}\" has been installed." ${ACCEPT_LEVEL}
 		else
 			show_debug_msg "${ICON_ERR} : \"${profile_color}${package_name}${NC}\" failed to install." ${ERR_LEVEL}
-		fi		
-	fi	
+		fi
+	fi
 }
 
 project_display_switch(){
@@ -1103,9 +1277,40 @@ error_tips(){
 	if [[ ${error_tips_enable} == true ]]; then
 		echo "*******************"
 		echo -e "Tips: \nError caused by references: \nCheck special characters {\033[34m$ _${NC}} or empty bibtex entries in .bib file."
-		echo -e "Example for installing unknown package:\n      \033[1;32msudo tlmgr repository http://ctan.org/tex-archive/macros/latex/contrib/ install cookybooky${NC}"
+		echo -e "Example for installing unknown package:\n      ${status_seperator_color}sudo tlmgr repository http://ctan.org/tex-archive/macros/latex/contrib/ install cookybooky${NC}"
 		echo -e "Debug with argument: <DEBUG_LEVEL 0 ~ 5>, e.g. this_script.sh 5"
+		echo -e "To avoid encoding error, add this line after encoding settings in .tex file:\n      ${status_seperator_color}\UseRawInputEncoding${NC}"
 		echo "*******************"
+	fi
+}
+
+killGhostCompiler(){
+	# in the case of quitting incorrectly but compiler still run
+	killall "${default_pdf_compiler}"
+	killall "perl"
+	show_debug_msg "${ICON_ACCEPT} : Existing ghost jobs have been killed." ${ACCEPT_LEVEL}
+}
+
+choose_output_name(){
+	echoFuncSeperator "choose_output_name"
+
+	local old_target_output_name="${target_output_name}"
+	echo "Please input the target output name (if empty, use the same name with main *.tex):"
+	read target_output_name
+	target_output_name="${target_output_name//[[:space:]]/}"
+
+	if [[ "${target_output_name}" == "" ]]; then
+		target_output_name="${project_name}"
+	fi
+
+	if [[ "${old_target_output_name}" != "${target_output_name}" ]]; then
+		if [[ -f "output/""${old_target_output_name}.pdf" ]]; then
+			mv "output/""${old_target_output_name}.pdf" "output/""${target_output_name}.pdf"
+		fi
+
+		if [[ -f "output/""${old_target_output_name}.tgz" ]]; then
+			mv "output/""${old_target_output_name}.tgz" "output/""${target_output_name}.tgz"
+		fi
 	fi
 }
 
@@ -1115,7 +1320,7 @@ error_tips(){
 
 enable_color_theme(){
   NC='\033[0m'  # the end
-  
+
   # foreground colours
   BLACK='\033[0;30m'
   RED='\033[0;31m'
@@ -1184,7 +1389,7 @@ echoFuncSeperator(){
 	if [[ "${DEBUG_LEVEL}" -ge "${DEBUG_LEVEL_MAX}" ]]; then
 		echo -e "\n"
 	    constructSeperator "[$1]" "*" "${fun_seperator_color}"
-	fi    
+	fi
 }
 
 # $1 -> character; $2 -> repeating times
@@ -1195,7 +1400,7 @@ repeatEcho(){
 constructSeperator(){
     terminalWidth=$(tput cols)
     windowWidth=${terminalWidth}
-    instructionTitle=$1 
+    instructionTitle=$1
 
     if [[ ${windowWidth} -le $((${#sh_name}+${#sh_ver}+7)) ]]; then
         windowWidth=$((${#sh_name}+${#sh_ver}+7))
@@ -1208,7 +1413,7 @@ constructSeperator(){
     lengthSeperator=$((windowWidth-${#instructionTitle}))
     tmpSeperator=$(repeatEcho "$2" $lengthSeperator)
     insertPos=$(($lengthSeperator/2))
-    
+
     if [[ "$3" == "" ]]; then
         color="${default_color}"
     else
@@ -1285,6 +1490,7 @@ showProfile(){
         # "${diff_version}::Recent diff version"
         "${tex_version_count}::Current version Number"
         # "${project_specified_config}::Project specified config"
+        "${target_output_name}::Target output name"
         )
 
     for index in "${arrayProfile[@]}"; do
@@ -1293,10 +1499,10 @@ showProfile(){
 
         anonymisePath "${KEY}" KEY
         echo -e "${DES}: ${profile_color}${KEY}${NC}"
-    done   
+    done
 
     # if output.pdf exist, show words counting result.
-	countPDFWords
+	countPDFWords "${target_output_name}"
 
     constructSeperator "" "-" "${status_seperator_color}"
 }
@@ -1307,7 +1513,7 @@ showMenu(){
 		# if [[ "${option}"== "" ]]; then
 		#     echo "Enter"
 		# fi
-		
+
 		# project
 		'            ::                        :: Project_1                                                               :: 0 :: 1 '
 		'1           :: project_display_switch :: Project                                                                 :: 0 :: 0 '
@@ -1324,6 +1530,9 @@ showMenu(){
 		'z      or Z :: tar_project_for_commit :: Compress the source project for commit (without compiled output)        :: 0 :: 1 '
 		'x      or X :: diff_file              :: Differ from old versions                                                :: 0 :: 1 '
 		'y      or Y :: diff_file_live         :: Differ from old versions (in Live mode)                                 :: 0 :: 1 '
+		'3           :: choose_recent_projects :: Choose from recent opened projects                                      :: 0 :: 1 '
+		'4           :: choose_output_name 	   :: Choose target output name (if empty, use the same name with main *.tex) :: 0 :: 1 '
+
 
 		# helper
 		'            ::                        :: Helper_2                                                                :: 0 :: 0 '
@@ -1336,7 +1545,9 @@ showMenu(){
 		'w      or W :: countingWordsConfig    :: Configure wordsCount                                                    :: 0 :: 1 '
 		'e      or E :: choose_tex_encoding    :: Choose encoding used by *.tex (default utf8)                            :: 0 :: 1 '
 		'i      or I :: install_package        :: Install a missing package                                               :: 0 :: 1 '
+		't      or T :: re_install_package     :: Re-Install all installed latex packages                                 :: 0 :: 1 '
 		'?           :: error_tips_switch      :: Help                                                                    :: 0 :: 1 '
+		'9           :: debug      			   :: Debug                                                                   :: 0 :: 1 '
         )
 
     count=0
@@ -1351,8 +1562,10 @@ showMenu(){
         KEY_2=${KEY_2//[[:space:]]/}
 
         FUN="${index#*::}"
-        FUN="${FUN%%::*}"     
-        FUN=${FUN//[[:space:]]/}
+        FUN="${FUN%%::*}"
+        FUN="${FUN#*[[:space:]]}"
+        FUN="${FUN%%[[:space:]]*}"
+        # FUN=${FUN//[[:space:]]/}
 
         PRE_DES="${DES}"
         DES="${index#*::}"
@@ -1398,7 +1611,7 @@ showMenu(){
 	        	menu_prefix=${menu_prefix}
 	        	menu_prefix=${menu_prefix//]/.0]}
 	        elif [[ ${MENU_LEVEL} -lt ${PRE_MENU_LEVEL} ]]; then
-	        	pre_count=`echo "${menu_prefix}" | sed  's/.*[\[|\.]\([0-9]*\)\.[0-9]*]$/\1/g'`	
+	        	pre_count=`echo "${menu_prefix}" | sed  's/.*[\[|\.]\([0-9]*\)\.[0-9]*]$/\1/g'`
 	        	count=$((${pre_count}+1))
 
 	        	menu_prefix=`echo "${menu_prefix}" | sed  's/\(.*[\[|\.]\)\([0-9]*\.[0-9]*\)]$/\1/g'`
@@ -1406,7 +1619,7 @@ showMenu(){
 	        else
 	        	pre_count=`echo "${menu_prefix}" | sed  's/.*[\[|\.]\([0-9]*\)]$/\1/g'`
 	        	count=$((${pre_count}+1))
-	        	
+
 	        	menu_prefix=`echo "${menu_prefix}" | sed  's/\(.*[\[|\.]\)\([0-9]*\)]$/\1/g'`
 	        	menu_prefix=${menu_prefix}"${count}]"
 	        fi
@@ -1421,17 +1634,17 @@ showMenu(){
 	        else
 	        	menu_indent=$(repeatEcho " " $((3*${MENU_LEVEL})))
 	        fi
-	        
+
 	        echo -e "  ${menu_indent}${menu_prefix} ${shortcut} -> ${FUN} -> ${DES}"
 
-	        PRE_MENU_LEVEL=${MENU_LEVEL}        	
+	        PRE_MENU_LEVEL=${MENU_LEVEL}
         fi
-    done 
+    done
 
-    error_tips   
+    error_tips
 
-    showRunHistory  
-    
+    showRunHistory
+
     read -n1 option
     echo ;
 
@@ -1443,14 +1656,14 @@ showMenu(){
     fi
 
     # not necessary if Skim enable auto-reload
-    # defaults write -app Skim SKAutoReloadFileUpdate -boolean true 
+    # defaults write -app Skim SKAutoReloadFileUpdate -boolean true
     # close_file
-    
+
     # read -s -n1 -p "Hit a key " keypress
     # -s 选项意味着不打印输入.
     # -n N 选项意味着只接受N个字符的输入.
     # -p 选项意味着在读取输入之前打印出后边的提示符.
-    
+
     final_option=""
     for index in "${arrayMenu[@]}"; do
         KEY="${index%%::*}"
@@ -1461,8 +1674,10 @@ showMenu(){
         KEY=${KEY//[[:space:]]/}
 
         FUN="${index#*::}"
-        FUN="${FUN%%::*}"     
-        FUN=${FUN//[[:space:]]/}
+        FUN="${FUN%%::*}"
+        FUN="${FUN#*[[:space:]]}"
+
+        # FUN=${FUN//[[:space:]]/}
 
         DES="${index#*::}"
         DES="${DES#*::}"
@@ -1473,15 +1688,15 @@ showMenu(){
 	            final_option="${FUN}"
 	        fi
         fi
-    done  
+    done
 
     if [[ "${final_option}" != "" ]]; then
         if [[ "${final_option}" != "quit" ]]; then
-            echo -e "${notify_color}<${final_option}... begin.>${NC}"  
+            echo -e "${notify_color}<${final_option}... begin.>${NC}"
             updateRunHistory "${ICON_WARN}[${option}]: ${final_option}... uncompleted."
-        fi 
+        fi
 
-        eval ${final_option}  
+        eval ${final_option}
 
         EXIT_CODE=$?
 
@@ -1501,7 +1716,7 @@ showMenu(){
 		esac
     else
         updateRunHistory "${ICON_ERR}[${option}]: Invalid option."
-    fi   
+    fi
 
     echo -e "${notify_color}<${run_history}>${NC}"
 }
@@ -1517,12 +1732,12 @@ trim_sh_name(){
 
     if [[ "$2" != "" ]]; then
         tmp=${tmp//[[:space:]]/$2}
-    fi   
+    fi
     echo "$tmp"
 }
 
 init(){
-	# shell for compilation of latex file with citation 
+	# shell for compilation of latex file with citation
 	sh_name="Build latex projects"
     sh_ver="1.0.0.1"
     sh_time="08/02/2018 12:13:00"
@@ -1538,6 +1753,7 @@ init(){
 	# profile path
 	profile_path=${profile_folder}"${sh_name_extra}.profile"
 	latex_package_profile_path=${profile_folder}"latex_package.profile"
+	recent_open_projects_list=${profile_folder}".recent_open_projects.profile"
 
 	# write new configuration to profile file
     defaultConfigList=(
@@ -1549,6 +1765,7 @@ init(){
         'default_tex_encoding::"utf8"'
         'countExcludeRef::true'
         'showTextForWordsCount::false'
+        'max_recent_projects_count::"5"'
         'run_history::                ::run history'
         )
 
@@ -1559,6 +1776,7 @@ init(){
         'default_ref_compiler::"Biber"'
         'default_tex_encoding::"utf8"'
         'tex_version_count::""'
+        'target_output_name::""'
         )
 
 	error_tips_enable=false
@@ -1577,6 +1795,8 @@ init(){
 	show_debug_msg "${ICON_ACCEPT} : the application is ready to use." ${ACCEPT_LEVEL}
 
 	clean_terminal
+
+	killGhostCompiler
 }
 
 main(){
@@ -1596,7 +1816,7 @@ main(){
 		showAppTitle
 
 		showProfile
-		
+
 		showMenu
 	done
 }
